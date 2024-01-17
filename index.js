@@ -21,6 +21,10 @@ function isValidHttpUrl(string) {
   return url.protocol === 'http:' || url.protocol === 'https:';
 }
 
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function submitWaiter(email, UUID, referralLink) {
   try {
     const { data } = await axios({
@@ -39,9 +43,10 @@ async function submitWaiter(email, UUID, referralLink) {
       },
     });
 
-    return data;
+    return { success: true, email };
   } catch (error) {
-    console.error(error.message.error);
+    console.error('Error submitting referral: '.error + error.message);
+    return { success: false };
   }
 }
 
@@ -57,32 +62,56 @@ async function submitWaiter(email, UUID, referralLink) {
       }
     }
 
-    const { data } = await axios({
-      url: 'https://api.getwaitlist.com/api/v1/widget_heartbeats',
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      data: {
-        location: referralLink,
-        waitlist_id: '13055',
-        referrer: '',
-        widget_type: 'WIDGET_1',
-      },
-    });
+    let numberOfReferrals = parseInt(
+      readlineSync.question('How many referrals do you want to make? '.info)
+    );
 
-    const heartbeatUUID = data.uuid;
-    const dummyEmail = emails.generateEmail();
+    if (isNaN(numberOfReferrals) || numberOfReferrals <= 0) {
+      console.log('Please enter a valid number.'.warn);
+      return;
+    }
 
-    submitWaiter(
-      dummyEmail.slice(1, dummyEmail.length - 1),
-      heartbeatUUID,
-      referralLink
-    ).then((res) => {
-      if (res && res.email) {
-        console.log('Referral has been added, the email: '.info + res.email);
+    for (let i = 0; i < numberOfReferrals; i++) {
+      const heartbeatResponse = await axios({
+        url: 'https://api.getwaitlist.com/api/v1/widget_heartbeats',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        data: {
+          location: referralLink,
+          waitlist_id: '13055',
+          referrer: '',
+          widget_type: 'WIDGET_1',
+        },
+      });
+
+      const heartbeatUUID = heartbeatResponse.data.uuid;
+      const dummyEmail = emails.generateEmail();
+
+      const submissionResult = await submitWaiter(
+        dummyEmail.slice(1, dummyEmail.length - 1),
+        heartbeatUUID,
+        referralLink
+      );
+
+      if (submissionResult.success) {
+        console.log(
+          `${i + 1} referral has been added, the email is ${
+            submissionResult.email
+          }`.info
+        );
+      } else {
+        console.log(`Failed to add ${i + 1} referral`.error);
       }
-    });
+
+      if (i < numberOfReferrals - 1) {
+        console.log(`Waiting for 1 minute before the next referral...`.info);
+        await delay(6000); // Wait for 1 minute
+      }
+    }
+
+    console.log('All referrals have been submitted.'.info);
   } catch (error) {
     console.error('An error occurred: '.error + error.message);
   }
