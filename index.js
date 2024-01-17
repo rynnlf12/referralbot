@@ -43,7 +43,12 @@ async function submitWaiter(email, UUID, referralLink) {
       },
     });
 
-    return { success: true, email };
+    if (!data.is_spam) {
+        return { success: true, email };
+    } else {
+        console.log('Your account has been flagged as spam, please wait for next hour.'.red);
+        process.exit(1);
+    }
   } catch (error) {
     console.error('Error submitting referral: '.error + error.message);
     return { success: false };
