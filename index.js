@@ -107,7 +107,7 @@ async function submitWaiter(email, UUID, referralLink) {
 
       if (i < numberOfReferrals - 1) {
         console.log(`Waiting for 1 minute before the next referral...`.info);
-        await delay(6000); // Wait for 1 minute
+        await delay(60000); // Wait for 1 minute
       }
     }
 
