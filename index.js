@@ -44,16 +44,16 @@ async function submitWaiter(email, UUID, referralLink) {
     });
 
     if (!data.is_spam) {
-      return { success: true, email };
+      return { success: true, email, isSpam: false };
     } else {
       console.log(
         'Your account has been flagged as spam, please wait for next hour.'.red
       );
-      process.exit(1);
+      return { success: false, isSpam: true };
     }
   } catch (error) {
     console.error('Error submitting referral: '.error + error.message);
-    return { success: false };
+    return { success: false, isSpam: false };
   }
 }
 
@@ -108,8 +108,12 @@ async function submitWaiter(email, UUID, referralLink) {
             submissionResult.email
           }`.info
         );
-      } else {
-        console.log(`Failed to add ${i + 1} referral`.error);
+        i++;
+      }
+
+      if (submissionResult.isSpam) {
+        await delay(3600000);
+        continue;
       }
 
       if (i < numberOfReferrals - 1) {
