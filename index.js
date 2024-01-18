@@ -47,7 +47,7 @@ async function submitWaiter(email, UUID, referralLink) {
       return { success: true, email, isSpam: false };
     } else {
       console.log(
-        'Your account has been flagged as spam, please wait for next hour.'.red
+        'Your account has been flagged as spam, waiting for 1 hour...'.error
       );
       return { success: false, isSpam: true };
     }
@@ -78,7 +78,8 @@ async function submitWaiter(email, UUID, referralLink) {
       return;
     }
 
-    for (let i = 0; i < numberOfReferrals; i++) {
+    let i = 0;
+    while (i < numberOfReferrals) {
       const heartbeatResponse = await axios({
         url: 'https://api.getwaitlist.com/api/v1/widget_heartbeats',
         method: 'POST',
@@ -116,9 +117,9 @@ async function submitWaiter(email, UUID, referralLink) {
         continue;
       }
 
-      if (i < numberOfReferrals - 1) {
+      if (i < numberOfReferrals && !submissionResult.isSpam) {
         console.log(`Waiting for 1 minute before the next referral...`.info);
-        await delay(60000); // Wait for 1 minute
+        await delay(60000);
       }
     }
 
